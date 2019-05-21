@@ -38,6 +38,7 @@ import org.apache.lucene.store.NativeFSLockFactory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.UUIDs;
@@ -250,7 +251,7 @@ public final class NodeEnvironment implements Closeable {
             sharedDataPath = null;
             locks = null;
             nodeLockId = -1;
-            nodeMetadata = new NodeMetadata(generateNodeId(settings));
+            nodeMetadata = new NodeMetadata(generateNodeId(settings), Version.CURRENT);
             return;
         }
         boolean success = false;
@@ -395,7 +396,6 @@ public final class NodeEnvironment implements Closeable {
         logger.info("heap size [{}], compressed ordinary object pointers [{}]", maxHeapSize, useCompressedOops);
     }
 
-
     /**
      * scans the node paths and loads existing metadata file. If not found a new meta data will be generated
      * and persisted into the nodePaths
@@ -405,10 +405,15 @@ public final class NodeEnvironment implements Closeable {
         final Path[] paths = Arrays.stream(nodePaths).map(np -> np.path).toArray(Path[]::new);
         NodeMetadata metadata = NodeMetadata.FORMAT.loadLatestState(logger, NamedXContentRegistry.EMPTY, paths);
         if (metadata == null) {
-            metadata = new NodeMetadata(generateNodeId(settings));
+            metadata = new NodeMetadata(generateNodeId(settings), Version.CURRENT);
+        } else {
+            metadata = metadata.upgradeToCurrentVersion();
         }
+
         // we write again to make sure all paths have the latest state file
+        assert metadata.nodeVersion().equals(Version.CURRENT) : metadata.nodeVersion() + " != " + Version.CURRENT;
         NodeMetadata.FORMAT.writeAndCleanup(metadata, paths);
+
         return metadata;
     }
 
@@ -1132,7 +1137,7 @@ public final class NodeEnvironment implements Closeable {
      */
     public static Path resolveBaseCustomLocation(String customDataPath, Path sharedDataPath) {
         if (Strings.isNotEmpty(customDataPath)) {
-            // This assert is because this should be caught by MetaDataCreateIndexService
+            // This assert is because this should be caught by MetadataCreateIndexService
             assert sharedDataPath != null;
             return sharedDataPath.resolve(customDataPath).resolve("0");
         } else {
