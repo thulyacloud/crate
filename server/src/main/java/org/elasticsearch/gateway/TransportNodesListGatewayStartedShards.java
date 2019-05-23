@@ -121,15 +121,11 @@ public class TransportNodesListGatewayStartedShards extends
                 nodeEnv.availableShardPaths(request.shardId));
             if (shardStateMetadata != null) {
                 if (indicesService.getShardOrNull(shardId) == null) {
-                    final String customDataPath;
-                    if (request.getCustomDataPath() != null) {
-                        customDataPath = request.getCustomDataPath();
-                    } else {
+                    final IndexMetadata metadata = clusterService.state().metadata().index(shardId.getIndex());
+                    final IndexSettings indexSettings = new IndexSettings(metadata, settings);
+                    if (request.getCustomDataPath() == null) {
                         // TODO: Fallback for BWC with older ES versions. Remove once request.getCustomDataPath() always returns non-null
-                        final IndexMetadata metadata = clusterService.state().metadata().index(shardId.getIndex());
-                        if (metadata != null) {
-                            customDataPath = new IndexSettings(metadata, settings).customDataPath();
-                        } else {
+                        if (metadata == null) {
                             logger.trace("{} node doesn't have meta data for the requests index", shardId);
                             throw new ElasticsearchException("node doesn't have meta data for index " + shardId.getIndex());
                         }
@@ -137,7 +133,7 @@ public class TransportNodesListGatewayStartedShards extends
                     // we don't have an open shard on the store, validate the files on disk are openable
                     ShardPath shardPath = null;
                     try {
-                        shardPath = ShardPath.loadShardPath(logger, nodeEnv, shardId, customDataPath);
+                        shardPath = ShardPath.loadShardPath(logger, nodeEnv, shardId, indexSettings);
                         if (shardPath == null) {
                             throw new IllegalStateException(shardId + " no shard path found");
                         }

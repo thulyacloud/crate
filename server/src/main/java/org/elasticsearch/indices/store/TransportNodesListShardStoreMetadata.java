@@ -139,24 +139,19 @@ public class TransportNodesListShardStoreMetadata extends TransportNodesAction<T
                     }
                 }
             }
-            final String customDataPath;
-            if (request.getCustomDataPath() != null) {
-                customDataPath = request.getCustomDataPath();
-            } else {
-                // TODO: Fallback for BWC with older ES versions. Remove this once request.getCustomDataPath() always returns non-null
+            final IndexSettings indexSettings;
                 if (indexService != null) {
-                    customDataPath = indexService.getIndexSettings().customDataPath();
+                    indexSettings = indexService.getIndexSettings();
                 } else {
                     IndexMetadata metadata = clusterService.state().metadata().index(shardId.getIndex());
                     if (metadata != null) {
-                        customDataPath = new IndexSettings(metadata, settings).customDataPath();
+                        indexSettings = new IndexSettings(metadata, settings);
                     } else {
                         logger.trace("{} node doesn't have meta data for the requests index", shardId);
                         throw new ElasticsearchException("node doesn't have meta data for index " + shardId.getIndex());
                     }
                 }
-            }
-            final ShardPath shardPath = ShardPath.loadShardPath(logger, nodeEnv, shardId, customDataPath);
+            final ShardPath shardPath = ShardPath.loadShardPath(logger, nodeEnv, shardId, indexSettings);
             if (shardPath == null) {
                 return new StoreFilesMetadata(shardId, Store.MetadataSnapshot.EMPTY, Collections.emptyList());
             }

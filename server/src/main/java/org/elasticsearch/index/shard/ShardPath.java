@@ -115,11 +115,10 @@ public final class ShardPath {
      * <b>Note:</b> this method resolves custom data locations for the shard if such a custom data path is provided.
      */
     public static ShardPath loadShardPath(Logger logger, NodeEnvironment env,
-                                          ShardId shardId, String customDataPath) throws IOException {
+                                          ShardId shardId, IndexSettings indexSettings) throws IOException {
         final Path[] paths = env.availableShardPaths(shardId);
-        final int nodeLockId = env.getNodeLockId();
         final Path sharedDataPath = env.sharedDataPath();
-        return loadShardPath(logger, shardId, customDataPath, paths, sharedDataPath);
+        return loadShardPath(logger, shardId, indexSettings, paths, sharedDataPath);
     }
 
     /**
@@ -127,9 +126,9 @@ public final class ShardPath {
      * directories with a valid shard state exist the one with the highest version will be used.
      * <b>Note:</b> this method resolves custom data locations for the shard.
      */
-    public static ShardPath loadShardPath(Logger logger, ShardId shardId, String customDataPath, Path[] availableShardPaths,
+    public static ShardPath loadShardPath(Logger logger, ShardId shardId, IndexSettings indexSettings, Path[] availableShardPaths,
                                           Path sharedDataPath) throws IOException {
-        final String indexUUID = shardId.getIndex().getUUID();
+        final String indexUUID = indexSettings.getUUID();
         Path loadedPath = null;
         for (Path path : availableShardPaths) {
             // EMPTY is safe here because we never call namedObject
@@ -155,14 +154,13 @@ public final class ShardPath {
         } else {
             final Path dataPath;
             final Path statePath = loadedPath;
-            final boolean hasCustomDataPath = Strings.isNotEmpty(customDataPath);
-            if (hasCustomDataPath) {
-                dataPath = NodeEnvironment.resolveCustomLocation(customDataPath, shardId, sharedDataPath);
+            if (indexSettings.hasCustomDataPath()) {
+                dataPath = NodeEnvironment.resolveCustomLocation(indexSettings, shardId, sharedDataPath);
             } else {
                 dataPath = statePath;
             }
             logger.debug("{} loaded data path [{}], state path [{}]", shardId, dataPath, statePath);
-            return new ShardPath(hasCustomDataPath, dataPath, statePath, shardId);
+            return new ShardPath(indexSettings.hasCustomDataPath(), dataPath, statePath, shardId);
         }
     }
 
@@ -194,7 +192,7 @@ public final class ShardPath {
         final Path statePath;
 
         if (indexSettings.hasCustomDataPath()) {
-            dataPath = env.resolveCustomLocation(indexSettings.customDataPath(), shardId);
+            dataPath = env.resolveCustomLocation(indexSettings, shardId);
             statePath = env.nodePaths()[0].resolve(shardId);
         } else {
             BigInteger totFreeSpace = BigInteger.ZERO;
