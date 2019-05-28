@@ -90,11 +90,9 @@ public class SysShardsTest extends SQLTransportIntegrationTest {
 
         // b2
         String b2Path = (String) response.rows()[1][0];
-        assertThat(b2Path, containsString(resolveCanonicalString("/nodes/")));
         assertThat(b2Path, endsWith(resolveCanonicalString("/indices/" + indexUUID + "/0")));
 
         String b2BlobPath = (String) response.rows()[1][1];
-        assertThat(b2BlobPath, containsString(resolveCanonicalString("/nodes/")));
         assertThat(b2BlobPath, endsWith(resolveCanonicalString("/indices/" + indexUUID + "/0/blobs")));
         // t1
         assertThat(response.rows()[2][1], nullValue());

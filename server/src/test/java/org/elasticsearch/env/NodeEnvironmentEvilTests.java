@@ -1,20 +1,23 @@
 /*
- * Licensed to Elasticsearch under one or more contributor
- * license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright
- * ownership. Elasticsearch licenses this file to you under
- * the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to Crate under one or more contributor license agreements.
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.  Crate licenses this file
+ * to you under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.  You may
+ * obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.  See the License for the specific language governing
+ * permissions and limitations under the License.
+ *
+ * However, if you have executed another commercial license agreement
+ * with Crate these terms will supersede the license and you may use the
+ * software solely pursuant to the terms of the relevant commercial
+ * agreement.
  */
 package org.elasticsearch.env;
 
@@ -51,10 +54,11 @@ public class NodeEnvironmentEvilTests extends ESTestCase {
             Settings build = Settings.builder()
                     .put(Environment.PATH_HOME_SETTING.getKey(), createTempDir().toAbsolutePath().toString())
                     .putList(Environment.PATH_DATA_SETTING.getKey(), tempPaths).build();
-            IOException exception = expectThrows(IOException.class, () -> {
+            IllegalStateException exception = expectThrows(IllegalStateException.class, () -> {
                 new NodeEnvironment(build, TestEnvironment.newEnvironment(build));
             });
-            assertTrue(exception.getMessage(), exception.getMessage().startsWith(path.toString()));
+            assertTrue(exception.getCause().getCause().getMessage(),
+                exception.getCause().getCause().getMessage().startsWith(path.toString()));
         }
     }
 
@@ -62,7 +66,7 @@ public class NodeEnvironmentEvilTests extends ESTestCase {
         assumeTrue("posix filesystem", isPosix);
         final String[] tempPaths = tmpPaths();
         Path path = PathUtils.get(randomFrom(tempPaths));
-        Path fooIndex = path.resolve("nodes").resolve("0").resolve(NodeEnvironment.INDICES_FOLDER)
+        Path fooIndex = path.resolve(NodeEnvironment.INDICES_FOLDER)
             .resolve("foo");
         Files.createDirectories(fooIndex);
         try (PosixPermissionsResetter attr = new PosixPermissionsResetter(fooIndex)) {
@@ -82,7 +86,7 @@ public class NodeEnvironmentEvilTests extends ESTestCase {
         assumeTrue("posix filesystem", isPosix);
         final String[] tempPaths = tmpPaths();
         Path path = PathUtils.get(randomFrom(tempPaths));
-        Path fooIndex = path.resolve("nodes").resolve("0").resolve(NodeEnvironment.INDICES_FOLDER)
+        Path fooIndex = path.resolve(NodeEnvironment.INDICES_FOLDER)
             .resolve("foo");
         Path fooShard = fooIndex.resolve("0");
         Path fooShardIndex = fooShard.resolve("index");
