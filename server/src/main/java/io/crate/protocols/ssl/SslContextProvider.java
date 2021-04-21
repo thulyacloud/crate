@@ -30,18 +30,19 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,9 +51,11 @@ import org.elasticsearch.common.inject.Singleton;
 import org.elasticsearch.common.settings.Settings;
 
 import io.crate.auth.AuthSettings;
+import io.crate.auth.Protocol;
 import io.crate.common.Optionals;
 import io.crate.common.annotations.VisibleForTesting;
 import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
@@ -85,12 +88,16 @@ public class SslContextProvider {
     }
 
     public SslContext getServerContext() {
+        return getServerContext(null);
+    }
+
+    public SslContext getServerContext(@Nullable Protocol protocol) {
         var localRef = sslContext;
         if (localRef == null) {
             synchronized (this) {
                 localRef = sslContext;
                 if (localRef == null) {
-                    sslContext = localRef = serverContext();
+                    sslContext = localRef = serverContext(protocol);
                 }
             }
         }
@@ -99,7 +106,7 @@ public class SslContextProvider {
 
     public void reloadSslContext() {
         synchronized (this) {
-            sslContext = serverContext();
+            sslContext = serverContext(null);
             LOGGER.info("SSL configuration is reloaded.");
         }
     }
@@ -144,7 +151,7 @@ public class SslContextProvider {
                 .forClient()
                 .ciphers(List.of(sslContext.createSSLEngine().getEnabledCipherSuites()))
                 .applicationProtocolConfig(ApplicationProtocolConfig.DISABLED)
-                .clientAuth(AuthSettings.resolveClientAuth(settings))
+                .clientAuth(ClientAuth.OPTIONAL)
                 .trustManager(concat(keyStoreRootCerts, trustStoreRootCerts))
                 .sessionCacheSize(0)
                 .sessionTimeout(0)
@@ -158,7 +165,7 @@ public class SslContextProvider {
         }
     }
 
-    private SslContext serverContext() {
+    private SslContext serverContext(@Nullable Protocol protocol) {
         try {
             var keyStore = loadKeyStore(keystorePath, keystorePass);
             var keyManagers = createKeyManagers(keyStore, keystoreKeyPass);
@@ -183,7 +190,7 @@ public class SslContextProvider {
                 .forServer(privateKey, keyStoreCertChain)
                 .ciphers(List.of(sslContext.createSSLEngine().getEnabledCipherSuites()))
                 .applicationProtocolConfig(ApplicationProtocolConfig.DISABLED)
-                .clientAuth(AuthSettings.resolveClientAuth(settings))
+                .clientAuth(AuthSettings.resolveClientAuth(settings, protocol))
                 .trustManager(concat(keyStoreRootCerts, trustStoreRootCerts))
                 .sessionCacheSize(0)
                 .sessionTimeout(0)

@@ -30,16 +30,24 @@ import java.security.Security;
 
 import javax.net.ssl.SSLContext;
 
+import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.node.DiscoveryNodes;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.Settings.Builder;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.transport.ConnectionManager;
 import org.elasticsearch.transport.Transport;
+import org.elasticsearch.transport.Transport.Connection;
+import org.elasticsearch.transport.TransportService;
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import io.crate.protocols.ssl.ConnectionTest;
 import io.crate.protocols.ssl.ConnectionTest.ProbeResult;
+import io.crate.testing.TestingHelpers;
 import io.crate.protocols.ssl.SslContextProvider;
 import io.crate.protocols.ssl.SslSettings;
 
@@ -79,6 +87,19 @@ public class SSLDualModeTransportITest extends SQLIntegrationTestCase {
     protected Settings nodeSettings(int nodeOrdinal) {
         Builder builder = Settings.builder()
             .put(super.nodeSettings(nodeOrdinal))
+            .put("auth.host_based.enabled", true)
+            .put("auth.host_based.config.a.method", "cert")
+            .put("auth.host_based.config.a.protocol", "transport")
+            .put("auth.host_based.config.a.ssl", "on")
+
+            .put("auth.host_based.config.b.method", "trust")
+            .put("auth.host_based.config.b.protocol", "transport")
+            .put("auth.host_based.config.b.ssl", "off")
+
+            .put("auth.host_based.config.c.method", "trust")
+            .put("auth.host_based.config.c.protocol", "http")
+            .put("auth.host_based.config.d.method", "trust")
+            .put("auth.host_based.config.d.protocol", "pg")
             .put(sslSettings);
 
         if (nodeOrdinal == 1) {
@@ -95,22 +116,29 @@ public class SSLDualModeTransportITest extends SQLIntegrationTestCase {
         SslContextProvider sslContextProvider = new SslContextProvider(sslSettings);
         SSLContext sslContext = sslContextProvider.jdkSSLContext();
         String[] nodeNames = internalCluster().getNodeNames();
-        String node1 = nodeNames[0];
+        String nodeName1 = nodeNames[0];
         {
-            var transport = internalCluster().getInstance(Transport.class, node1);
+            var transport = internalCluster().getInstance(Transport.class, nodeName1);
             var publishAddress = transport.boundAddress().publishAddress();
             var address = publishAddress.address();
-            ProbeResult probeResult = ConnectionTest.probeSSL(sslContext, address);
-            assertThat(probeResult, is(ProbeResult.SSL_AVAILABLE));
+            // ProbeResult probeResult = ConnectionTest.probeSSL(sslContext, address);
+            // assertThat(probeResult, is(ProbeResult.SSL_AVAILABLE));
         }
 
-        String node2 = nodeNames[1];
+        String nodeName2 = nodeNames[1];
         {
-            var transport = internalCluster().getInstance(Transport.class, node2);
+            var transport = internalCluster().getInstance(Transport.class, nodeName2);
             var publishAddress = transport.boundAddress().publishAddress();
             var address = publishAddress.address();
-            ProbeResult probeResult = ConnectionTest.probeSSL(sslContext, address);
-            assertThat(probeResult, is(ProbeResult.SSL_MISSING));
+            // ProbeResult probeResult = ConnectionTest.probeSSL(sslContext, address);
+            // assertThat(probeResult, is(ProbeResult.SSL_MISSING));
         }
+
+        TransportService transportService = internalCluster().getInstance(TransportService.class, nodeName1);
+        ClusterService clusterService = internalCluster().getInstance(ClusterService.class, nodeName1);
+        DiscoveryNode node2 = clusterService.state().getNodes().resolveNode(nodeName2);
+        assertThat(transportService.nodeConnected(node2), is(true));
+        Connection connection = transportService.getConnection(node2);
+        assertThat(connection.isClosed(), is(false));
     }
 }

@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-public class StubUserManager implements UserManager {
+public class StubUserManager implements UserManager, UserLookup {
 
     @Override
     public CompletableFuture<Long> createUser(String userName, @Nullable SecureHash hashedPw) {
@@ -52,15 +52,13 @@ public class StubUserManager implements UserManager {
         return CompletableFuture.failedFuture(new UnsupportedFeatureException("GRANT or REVOKE privileges is only supported in enterprise version"));
     }
 
-    @Nullable
-    @Override
-    public User findUser(String userName) {
-        // Without enterprise enabled everything runs as superuser
-        return User.CRATE_USER;
-    }
-
     @Override
     public AccessControl getAccessControl(SessionContext sessionContext) {
         return AccessControl.DISABLED;
+    }
+
+    @Override
+    public User findUser(String userName) {
+        return User.CRATE_USER;
     }
 }

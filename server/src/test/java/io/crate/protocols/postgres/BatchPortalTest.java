@@ -79,6 +79,7 @@ public class BatchPortalTest extends CrateDummyClusterServiceUnitTest {
                 consumer.accept(InMemoryBatchIterator.of(params, null), null);
             }
         };
+        StubUserManager stubUserManager = new StubUserManager();
         Planner planner = new Planner(
             Settings.EMPTY,
             clusterService,
@@ -87,7 +88,7 @@ public class BatchPortalTest extends CrateDummyClusterServiceUnitTest {
             null,
             null,
             sqlExecutor.schemas(),
-            new StubUserManager(),
+            stubUserManager,
             mock(SessionSettingRegistry.class)
             ) {
 

@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import io.crate.action.sql.SessionContext;
 import io.crate.analyze.ParamTypeHints;
 import io.crate.user.Privilege;
+import io.crate.user.StubUserManager;
 import io.crate.user.User;
 import io.crate.user.UserLookupService;
 import io.crate.user.UserManager;
