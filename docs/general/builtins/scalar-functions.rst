@@ -2446,6 +2446,46 @@ null_string
 If the ``null_string`` argument is omitted or NULL, none of the substrings of
 the input will be replaced by NULL.
 
+.. _scalar-array-min:
+
+``array_min(anyarray)``
+---------------------------------------------------------
+
+The ``array_min`` function finds minimal element in a given array.
+Return value is always of the type of input array.
+If array argument is ``NULL``, the result is ``NULL``.
+If array argument is empty array, the result is ``NULL``.
+
+::
+
+    cr> select array_min([3, 2, 1]) AS min;
+    +-----+
+    | min |
+    +-----+
+    |   1 |
+    +-----+
+    SELECT 1 row in set (... sec)
+
+.. _scalar-array-max:
+
+``array_max(anyarray)``
+---------------------------------------------------------
+
+The ``array_max`` function finds maximal element in a given array.
+Return value is always of the type of input array.
+If array argument is ``NULL``, the result is ``NULL``.
+If array argument is empty array, the result is ``NULL``.
+
+::
+
+    cr> select array_max([1,2,3]) AS max;
+    +-----+
+    | max |
+    +-----+
+    |   3 |
+    +-----+
+    SELECT 1 row in set (... sec)
+
 .. _scalar-conditional-functions-expressions:
 
 Conditional functions and expressions
