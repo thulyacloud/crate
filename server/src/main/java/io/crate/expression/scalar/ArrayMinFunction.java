@@ -39,6 +39,8 @@ public class ArrayMinFunction<T> extends Scalar<T, List<T>> {
 
     public static final String NAME = "array_min";
 
+    private final DataType dataType;
+
     public static void register(ScalarFunctionModule module) {
 
         for (var supportedType : DataTypes.PRIMITIVE_TYPES) {
@@ -59,6 +61,7 @@ public class ArrayMinFunction<T> extends Scalar<T, List<T>> {
     private ArrayMinFunction(Signature signature, Signature boundSignature) {
         this.signature = signature;
         this.boundSignature = boundSignature;
+        this.dataType = signature.getReturnType().createType();
         ensureInnerTypeIsNotUndefined(boundSignature.getArgumentDataTypes(), signature.getName().name());
     }
 
@@ -79,8 +82,6 @@ public class ArrayMinFunction<T> extends Scalar<T, List<T>> {
         if (values == null || values.isEmpty()) {
             return null;
         }
-
-        DataType dataType = signature.getReturnType().createType();
 
         // Taking first element in order not to initialize min
         // with type dependant TYPE.MAX_VALUE.

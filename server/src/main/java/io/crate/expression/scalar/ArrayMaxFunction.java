@@ -39,6 +39,8 @@ public class ArrayMaxFunction<T> extends Scalar<T, List<T>> {
 
     public static final String NAME = "array_max";
 
+    private final DataType dataType;
+
     public static void register(ScalarFunctionModule module) {
 
         for (var supportedType : DataTypes.PRIMITIVE_TYPES) {
@@ -59,6 +61,7 @@ public class ArrayMaxFunction<T> extends Scalar<T, List<T>> {
     private ArrayMaxFunction(Signature signature, Signature boundSignature) {
         this.signature = signature;
         this.boundSignature = boundSignature;
+        this.dataType = signature.getReturnType().createType();
         ensureInnerTypeIsNotUndefined(boundSignature.getArgumentDataTypes(), signature.getName().name());
     }
 
@@ -79,8 +82,6 @@ public class ArrayMaxFunction<T> extends Scalar<T, List<T>> {
         if (values == null || values.isEmpty()) {
             return null;
         }
-
-        DataType dataType = signature.getReturnType().createType();
 
         // Taking first element in order not to initialize max
         // with type dependant TYPE.MIN_VALUE.

@@ -2451,10 +2451,8 @@ the input will be replaced by NULL.
 ``array_min(anyarray)``
 ---------------------------------------------------------
 
-The ``array_min`` function finds minimal element in a given array.
-Return value is always of the type of input array.
-If array argument is ``NULL``, the result is ``NULL``.
-If array argument is empty array, the result is ``NULL``.
+The ``array_min`` function returns the smallest element in ``array``. If
+``array`` is ``NULL`` or an empty array, the function returns``NULL``.
 
 ::
 
