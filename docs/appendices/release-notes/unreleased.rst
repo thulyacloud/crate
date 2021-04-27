@@ -61,10 +61,11 @@ Changes
   that concatenates array elements into a single string using a separator and
   an optional null-string.
 
-- Added :ref:`array_min <scalar-array-min>` scalar function
-  that finds minimal element in array.
+- Added :ref:`array_min <scalar-array-min>` and
+  :ref:`array_max <scalar-array-max>` scalar functions
+  returning minimal and maximal element in array respectively.
 
-- Added :ref:`array_max <scalar-array-max>` scalar function
+- Added  scalar function
   that finds maximal element in array.
 
 - Added support for reading ``cgroup`` information in the ``cgroup v2`` format.

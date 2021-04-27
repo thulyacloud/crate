@@ -2448,15 +2448,15 @@ the input will be replaced by NULL.
 
 .. _scalar-array-min:
 
-``array_min(anyarray)``
----------------------------------------------------------
+``array_min(array)``
+--------------------
 
 The ``array_min`` function returns the smallest element in ``array``. If
 ``array`` is ``NULL`` or an empty array, the function returns``NULL``.
 
 ::
 
-    cr> select array_min([3, 2, 1]) AS min;
+    cr> SELECT array_min([3, 2, 1]) AS min;
     +-----+
     | min |
     +-----+
@@ -2466,17 +2466,15 @@ The ``array_min`` function returns the smallest element in ``array``. If
 
 .. _scalar-array-max:
 
-``array_max(anyarray)``
----------------------------------------------------------
+``array_max(array)``
+--------------------
 
-The ``array_max`` function finds maximal element in a given array.
-Return value is always of the type of input array.
-If array argument is ``NULL``, the result is ``NULL``.
-If array argument is empty array, the result is ``NULL``.
+The ``array_max`` function returns the largest element in ``array``. If
+``array`` is ``NULL`` or an empty array, the function returns``NULL``.
 
 ::
 
-    cr> select array_max([1,2,3]) AS max;
+    cr> SELECT array_max([1,2,3]) AS max;
     +-----+
     | max |
     +-----+

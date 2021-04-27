@@ -16,6 +16,8 @@ public class ArrayMaxFunctionTest extends AbstractScalarFunctionsTest {
 
         for(DataType t: DataTypes.PRIMITIVE_TYPES) {
 
+
+
             var expression = new StringBuilder("array_max(cast([")
                 .append(listToCommaSeparatedString(List.of(1,2,3), t))
                 .append("] as array(")
