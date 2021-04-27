@@ -27,26 +27,30 @@ import io.crate.metadata.NodeContext;
 import io.crate.metadata.Scalar;
 import io.crate.metadata.TransactionContext;
 import io.crate.metadata.functions.Signature;
+import io.crate.types.ArrayType;
+import io.crate.types.DataType;
+import io.crate.types.DataTypes;
 
 import java.util.List;
 
 import static io.crate.expression.scalar.array.ArrayArgumentValidators.ensureInnerTypeIsNotUndefined;
-import static io.crate.metadata.functions.TypeVariableConstraint.typeVariable;
-import static io.crate.types.TypeSignature.parseTypeSignature;
 
-public class ArrayMaxFunction<T extends Comparable> extends Scalar<T, List<T>> {
+public class ArrayMaxFunction<T> extends Scalar<T, List<T>> {
 
     public static final String NAME = "array_max";
 
     public static void register(ScalarFunctionModule module) {
-        module.register(
-            Signature.scalar(
-                NAME,
-                parseTypeSignature("array(E)"),
-                parseTypeSignature("E")
-            ).withTypeVariableConstraints(typeVariable("E")),
-            ArrayMaxFunction::new
-        );
+
+        for (var supportedType : DataTypes.PRIMITIVE_TYPES) {
+            module.register(
+                Signature.scalar(
+                    NAME,
+                    new ArrayType(supportedType).getTypeSignature(),
+                    supportedType.getTypeSignature()
+                ),
+                ArrayMaxFunction::new
+            );
+        }
     }
 
     private final Signature signature;
@@ -76,13 +80,15 @@ public class ArrayMaxFunction<T extends Comparable> extends Scalar<T, List<T>> {
             return null;
         }
 
+        DataType dataType = signature.getReturnType().createType();
+
         // Taking first element in order not to initialize max
         // with type dependant TYPE.MIN_VALUE.
         T max = values.get(0);
 
         for (int i = 1; i < values.size(); i++) {
             T item = values.get(i);
-            if (item.compareTo(max) > 0) {
+            if (dataType.compare(item, max) > 0) {
                 max = item;
             }
         }

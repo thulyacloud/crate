@@ -46,15 +46,20 @@ import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.testing.SQLExecutor;
 import io.crate.testing.SqlExpressions;
 import io.crate.types.DataType;
+import io.crate.types.DataTypes;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.joda.time.Period;
+import org.joda.time.format.PeriodFormat;
 import org.junit.Before;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
@@ -258,6 +263,39 @@ public abstract class ScalarTestCase extends CrateDummyClusterServiceUnitTest {
     protected FunctionImplementation getFunction(String functionName, List<DataType> argTypes) {
         return sqlExpressions.nodeCtx.functions().get(
             null, functionName, Lists2.map(argTypes, t -> new InputColumn(0, t)), SearchPath.pathWithPGCatalogAndDoc());
+    }
+
+    /**
+     * Converts list of integers into string representation
+     * of the given primitive type, values are separated by comma.
+     *
+     * @param intValues Values to convert.
+     * @param dataType Target type, only primitives types are supported.
+     */
+    protected String listToCommaSeparatedString(List<Integer> intValues, DataType dataType) {
+        if (DataTypes.isPrimitive(dataType)) {
+            StringBuilder sb = new StringBuilder();
+
+            List<Period> intervals = intValues.stream()
+                .map(num -> new Period().withDays(num))
+                .collect(Collectors.toList());
+
+            if (dataType.id() == DataTypes.INTERVAL.id()) {
+                sb.append(intervals.stream()
+                    .map(period -> "'" + PeriodFormat.getDefault().print(period) +"'")
+                    .collect(Collectors.joining(","))
+                );
+            }
+            else {
+                sb.append(intValues.stream()
+                    .map(num -> num.toString())
+                    .collect(Collectors.joining(","))
+                );
+            }
+            return sb.toString();
+        } else {
+            throw new IllegalArgumentException(String.format("Cannot cast list of integers to %", dataType.getName()));
+        }
     }
 
     private static class AssertMax1ValueCallInput implements Input {
