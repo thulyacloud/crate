@@ -21,6 +21,7 @@
 
 package io.crate.testing;
 
+import com.carrotsearch.randomizedtesting.RandomizedTest;
 import io.crate.analyze.where.DocKeys;
 import io.crate.common.collections.Lists2;
 import io.crate.common.collections.Sorted;
@@ -63,6 +64,7 @@ import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -435,5 +437,19 @@ public class TestingHelpers {
                 hasEntry(
                     is(Version.Property.UPGRADED.toString()),
                     versionUpgraded == null ? nullValue() : is(versionUpgraded.externalNumber()))));
+    }
+
+    public static <T> List<T> getRandomsOfType(int minLength, int maxLength, DataType<T> dataType) {
+        var values = new ArrayList<T>();
+        if(minLength < 2) {
+            throw new IllegalArgumentException("minLength must be greater than 1. One item is reserved for NULL and there must be at least 1 not NULL value.");
+        }
+        int length  = RandomizedTest.randomIntBetween(minLength, maxLength);
+        var generator = DataTypeTesting.getDataGenerator(dataType);
+        for (int i = 0; i <= length - 1; i++) {
+            values.add(dataType.sanitizeValue(generator.get()));
+        }
+        values.add(null); //One NULL value is always included.
+        return values;
     }
 }

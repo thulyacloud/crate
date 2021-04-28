@@ -1,38 +1,45 @@
 package io.crate.expression.scalar;
 
+import io.crate.expression.symbol.Literal;
+import io.crate.testing.TestingHelpers;
+import io.crate.types.ArrayType;
 import io.crate.types.DataType;
 import io.crate.types.DataTypes;
-import org.joda.time.Period;
-import org.joda.time.format.PeriodFormat;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.crate.testing.Asserts.assertThrows;
 
-public class ArrayMinFunctionTest extends AbstractScalarFunctionsTest {
+public class ArrayMinFunctionTest extends ScalarTestCase {
 
     @Test
     public void test_array_returns_min_element() {
-        for(DataType t: DataTypes.PRIMITIVE_TYPES) {
+        List<DataType> typesToTest = new ArrayList(DataTypes.PRIMITIVE_TYPES);
+        typesToTest.add(DataTypes.NUMERIC);
 
-            var expression = new StringBuilder("array_min(cast([")
-                .append(listToCommaSeparatedString(List.of(3,2,1), t))
-                .append("] as array(")
-                .append(t.getName())
-                .append(")))");
+        for(DataType type: typesToTest) {
+            var valuesToTest = TestingHelpers.getRandomsOfType(2, 10, type);
 
-            Object expected;
+            var expected = valuesToTest.stream()
+                .filter(o -> o != null)
+                .min((o1, o2) -> type.compare(o1, o2))
+                .get();
 
-            if (t.id() == DataTypes.INTERVAL.id()) {
-                expected = new Period().withDays(1);
-            }
-            else {
-                expected = t.implicitCast(1);
-            }
-            assertEvaluate(expression.toString(), expected);
+            String expression = String.format("array_min(?::%s[])", type.getName());
+            assertEvaluate(expression, expected, Literal.of(valuesToTest, new ArrayType<>(type)));
         }
+    }
+
+    @Test
+    public void test_array_first_element_null_returns_min() {
+        assertEvaluate("array_min([null, 1])", 1);
+    }
+
+    @Test
+    public void test_all_elements_nulls_results_in_null() {
+        assertEvaluate("array_min(cast([null, null] as array(integer)))", null);
     }
 
     @Test

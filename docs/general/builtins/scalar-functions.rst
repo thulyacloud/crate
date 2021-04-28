@@ -2452,7 +2452,9 @@ the input will be replaced by NULL.
 --------------------
 
 The ``array_min`` function returns the smallest element in ``array``. If
-``array`` is ``NULL`` or an empty array, the function returns``NULL``.
+``array`` is ``NULL`` or an empty array, the function returns ``NULL``. This
+function supports arrays of any of the :ref:`primitive types
+<sql_ddl_datatypes_primitives>`.
 
 ::
 
@@ -2470,7 +2472,9 @@ The ``array_min`` function returns the smallest element in ``array``. If
 --------------------
 
 The ``array_max`` function returns the largest element in ``array``. If
-``array`` is ``NULL`` or an empty array, the function returns``NULL``.
+``array`` is ``NULL`` or an empty array, the function returns ``NULL``. This
+function supports arrays of any of the :ref:`primitive types
+<sql_ddl_datatypes_primitives>`.
 
 ::
 

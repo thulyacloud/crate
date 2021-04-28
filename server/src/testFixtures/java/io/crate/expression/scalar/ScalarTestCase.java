@@ -31,6 +31,7 @@ import io.crate.expression.InputFactory;
 import io.crate.expression.symbol.Function;
 import io.crate.expression.symbol.InputColumn;
 import io.crate.expression.symbol.Literal;
+import io.crate.expression.symbol.ParameterBinder;
 import io.crate.expression.symbol.RefReplacer;
 import io.crate.expression.symbol.Symbol;
 import io.crate.metadata.CoordinatorTxnCtx;
@@ -46,20 +47,15 @@ import io.crate.test.integration.CrateDummyClusterServiceUnitTest;
 import io.crate.testing.SQLExecutor;
 import io.crate.testing.SqlExpressions;
 import io.crate.types.DataType;
-import io.crate.types.DataTypes;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
-import org.joda.time.Period;
-import org.joda.time.format.PeriodFormat;
 import org.junit.Before;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
@@ -191,6 +187,19 @@ public abstract class ScalarTestCase extends CrateDummyClusterServiceUnitTest {
             }
             return literal;
         });
+
+        if(unusedLiterals.size() == literals.length) {
+            // Currently it's supposed that literals will be either references or parameters.
+            // One of replaceRefs and bindParameters does nothing and doesn't consume unusedLiterals.
+            function = (Function) ParameterBinder.bindParameters(function, p -> {
+                Literal<?> literal = unusedLiterals.pollFirst();
+                if (literal == null) {
+                    throw new IllegalArgumentException("No value literal for parameter=" + p + ", please add more literals");
+                }
+                return literal;
+            });
+        }
+
         Scalar scalar = (Scalar) sqlExpressions.nodeCtx.functions().getQualified(function, txnCtx.sessionSettings().searchPath());
         assertThat("Function implementation not found using full qualified lookup", scalar, Matchers.notNullValue());
 
@@ -263,39 +272,6 @@ public abstract class ScalarTestCase extends CrateDummyClusterServiceUnitTest {
     protected FunctionImplementation getFunction(String functionName, List<DataType> argTypes) {
         return sqlExpressions.nodeCtx.functions().get(
             null, functionName, Lists2.map(argTypes, t -> new InputColumn(0, t)), SearchPath.pathWithPGCatalogAndDoc());
-    }
-
-    /**
-     * Converts list of integers into string representation
-     * of the given primitive type, values are separated by comma.
-     *
-     * @param intValues Values to convert.
-     * @param dataType Target type, only primitives types are supported.
-     */
-    protected String listToCommaSeparatedString(List<Integer> intValues, DataType dataType) {
-        if (DataTypes.isPrimitive(dataType)) {
-            StringBuilder sb = new StringBuilder();
-
-            List<Period> intervals = intValues.stream()
-                .map(num -> new Period().withDays(num))
-                .collect(Collectors.toList());
-
-            if (dataType.id() == DataTypes.INTERVAL.id()) {
-                sb.append(intervals.stream()
-                    .map(period -> "'" + PeriodFormat.getDefault().print(period) +"'")
-                    .collect(Collectors.joining(","))
-                );
-            }
-            else {
-                sb.append(intValues.stream()
-                    .map(num -> num.toString())
-                    .collect(Collectors.joining(","))
-                );
-            }
-            return sb.toString();
-        } else {
-            throw new IllegalArgumentException(String.format("Cannot cast list of integers to %", dataType.getName()));
-        }
     }
 
     private static class AssertMax1ValueCallInput implements Input {

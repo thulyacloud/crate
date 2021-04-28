@@ -43,6 +43,15 @@ public class ArrayMaxFunction<T> extends Scalar<T, List<T>> {
 
     public static void register(ScalarFunctionModule module) {
 
+        module.register(
+            Signature.scalar(
+                NAME,
+                new ArrayType(DataTypes.NUMERIC).getTypeSignature(),
+                DataTypes.NUMERIC.getTypeSignature()
+            ),
+            ArrayMaxFunction::new
+        );
+
         for (var supportedType : DataTypes.PRIMITIVE_TYPES) {
             module.register(
                 Signature.scalar(
@@ -78,7 +87,6 @@ public class ArrayMaxFunction<T> extends Scalar<T, List<T>> {
     @Override
     public T evaluate(TransactionContext txnCtx, NodeContext nodeCtx, Input[] args) {
         List<T> values = (List) args[0].value();
-
         if (values == null || values.isEmpty()) {
             return null;
         }
@@ -89,11 +97,15 @@ public class ArrayMaxFunction<T> extends Scalar<T, List<T>> {
 
         for (int i = 1; i < values.size(); i++) {
             T item = values.get(i);
-            if (dataType.compare(item, max) > 0) {
-                max = item;
+            if (item != null) {
+                //max can be null on the first iteration.
+                if (max == null) {
+                    max = item;
+                } else if (dataType.compare(item, max) > 0) {
+                    max = item;
+                }
             }
         }
-
         return max;
     }
 }

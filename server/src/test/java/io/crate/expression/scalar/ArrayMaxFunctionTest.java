@@ -1,39 +1,45 @@
 package io.crate.expression.scalar;
 
+import io.crate.expression.symbol.Literal;
+import io.crate.testing.TestingHelpers;
+import io.crate.types.ArrayType;
 import io.crate.types.DataType;
 import io.crate.types.DataTypes;
-import org.joda.time.Period;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.crate.testing.Asserts.assertThrows;
 
-public class ArrayMaxFunctionTest extends AbstractScalarFunctionsTest {
+public class ArrayMaxFunctionTest extends ScalarTestCase {
 
     @Test
-    public void test_array_returns_min_element() {
+    public void test_array_returns_max_element() {
+        List<DataType> typesToTest = new ArrayList(DataTypes.PRIMITIVE_TYPES);
+        typesToTest.add(DataTypes.NUMERIC);
 
-        for(DataType t: DataTypes.PRIMITIVE_TYPES) {
+        for(DataType type: typesToTest) {
+            var valuesToTest = TestingHelpers.getRandomsOfType(2, 10, type);
 
+            var expected = valuesToTest.stream()
+                .filter(o -> o != null)
+                .max((o1, o2) -> type.compare(o1, o2))
+                .get();
 
-
-            var expression = new StringBuilder("array_max(cast([")
-                .append(listToCommaSeparatedString(List.of(1,2,3), t))
-                .append("] as array(")
-                .append(t.getName())
-                .append(")))");
-
-            Object expected;
-
-            if (t.id() == DataTypes.INTERVAL.id()) {
-                expected = new Period().withDays(3);
-            }
-            else {
-                expected = t.implicitCast(3);
-            }
-            assertEvaluate(expression.toString(), expected);
+            String expression = String.format("array_max(?::%s[])", type.getName());
+            assertEvaluate(expression, expected, Literal.of(valuesToTest, new ArrayType<>(type)));
         }
+    }
+
+    @Test
+    public void test_array_first_element_null_returns_max() {
+        assertEvaluate("array_max([null, 1])", 1);
+    }
+
+    @Test
+    public void test_all_elements_nulls_results_in_null() {
+        assertEvaluate("array_max(cast([null, null] as array(integer)))", null);
     }
 
     @Test
