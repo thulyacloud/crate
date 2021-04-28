@@ -138,8 +138,6 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
         final long freshVersion = randomLongBetween(2L, Long.MAX_VALUE);
         final long staleVersion = staleTerm == freshTerm ? randomLongBetween(1L, freshVersion - 1) : randomLongBetween(1L, Long.MAX_VALUE);
 
-        final HashSet<Path> unimportantPaths = Arrays.stream(dataPaths).collect(Collectors.toCollection(HashSet::new));
-
         try (NodeEnvironment nodeEnvironment = newNodeEnvironment(dataPaths)) {
             final ClusterState clusterState = loadPersistedClusterState(newPersistedClusterStateService(nodeEnvironment));
             try (Writer writer = newPersistedClusterStateService(nodeEnvironment).createWriter()) {
@@ -152,10 +150,6 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
         }
 
         try (NodeEnvironment nodeEnvironment = newNodeEnvironment(new Path[]{randomFrom(dataPaths)})) {
-            Path o = nodeEnvironment.nodeDataPaths()[0];
-            // drop nodes/0 prefix
-            Path subpath = o.subpath(0, o.getNameCount() - 2);
-            unimportantPaths.remove(subpath);
             try (Writer writer = newPersistedClusterStateService(nodeEnvironment).createWriter()) {
                 final ClusterState clusterState = loadPersistedClusterState(newPersistedClusterStateService(nodeEnvironment));
                 writeState(writer, freshTerm,
@@ -166,9 +160,8 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
             }
         }
 
-//        if (randomBoolean() && unimportantPaths.isEmpty() == false) {
-//            IOUtils.rm(randomFrom(unimportantPaths));
-//        }
+        // The original tests deletes randomly the unimportantPaths, this is under the assumption that not multiple nodes
+        // are in the same data.path which we haven't backported that you. Therefore this part is skipped
 
         // verify that the freshest state is chosen
         try (NodeEnvironment nodeEnvironment = newNodeEnvironment(dataPaths)) {
@@ -350,7 +343,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
                     };
                 }
             };
-            
+
             try (Writer writer = persistedClusterStateService.createWriter()) {
                 final ClusterState clusterState = loadPersistedClusterState(persistedClusterStateService);
                 final long newTerm = randomNonNegativeLong();

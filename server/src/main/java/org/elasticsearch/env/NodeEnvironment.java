@@ -341,7 +341,8 @@ public final class NodeEnvironment implements Closeable {
      * @return the resolved path
      */
     public static Path resolveNodePath(final Path path, final int nodeLockId) {
-        //TODO if the path is already prefixed, do not prefix it again
+        // This makes sure when the path for the node lock using the 'node/$nodeLockId' already
+        // exists it is not recreated again.
         var id = Integer.toString(nodeLockId);
         if (path.toString().endsWith(NODES_FOLDER + "/" + id)) {
             return path;

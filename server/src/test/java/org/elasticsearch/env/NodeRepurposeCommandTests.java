@@ -123,8 +123,8 @@ public class NodeRepurposeCommandTests extends ESTestCase {
     public void testLocked() throws IOException {
         try (NodeEnvironment env = new NodeEnvironment(dataMasterSettings, TestEnvironment.newEnvironment(dataMasterSettings))) {
             assertThat(expectThrows(ElasticsearchException.class,
-                                    () -> verifyNoQuestions(noDataNoMasterSettings, null)).getMessage(),
-                       containsString(NodeRepurposeCommand.FAILED_TO_OBTAIN_NODE_LOCK_MSG));
+                () -> verifyNoQuestions(noDataNoMasterSettings, null)).getMessage(),
+                containsString(NodeRepurposeCommand.FAILED_TO_OBTAIN_NODE_LOCK_MSG));
         }
     }
 
@@ -193,7 +193,7 @@ public class NodeRepurposeCommandTests extends ESTestCase {
             terminal.addTextInput(randomFrom("yy", "Yy", "n", "yes", "true", "N", "no"));
             verifyUnchangedDataFiles(() -> {
                 ElasticsearchException exception = expectThrows(ElasticsearchException.class,
-                                                                () -> executeRepurposeCommand(terminal, settings, 0));
+                    () -> executeRepurposeCommand(terminal, settings, 0));
                 assertThat(exception.getMessage(), containsString(NodeRepurposeCommand.ABORTED_BY_USER_MSG));
             });
         });

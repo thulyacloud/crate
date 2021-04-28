@@ -143,7 +143,6 @@ import org.junit.Before;
 import io.crate.common.collections.Tuple;
 import io.crate.common.unit.TimeValue;
 
-@ESIntegTestCase.ClusterScope(numClientNodes = 0, numDataNodes = 5, supportsDedicatedMasters = false)
 public class AbstractCoordinatorTestCase extends ESTestCase {
 
     protected final List<NodeEnvironment> nodeEnvironments = new ArrayList<>();

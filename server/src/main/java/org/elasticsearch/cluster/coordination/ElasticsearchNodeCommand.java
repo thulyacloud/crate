@@ -52,22 +52,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class ElasticsearchNodeCommand extends EnvironmentAwareCommand {
+
     private static final Logger LOGGER = LogManager.getLogger(ElasticsearchNodeCommand.class);
     static final String DELIMITER = "------------------------------------------------------------------------\n";
 
     public static final String STOP_WARNING_MSG =
-        DELIMITER +
-        "\n" +
-        "    WARNING: CrateDB MUST be stopped before running this tool." +
-        "\n";
-    public static final String FAILED_TO_OBTAIN_NODE_LOCK_MSG = "failed to lock node's directory, is Elasticsearch still running?";
-    public static final String ABORTED_BY_USER_MSG = "aborted by user";
+            DELIMITER +
+                    "\n" +
+                    "    WARNING: CrateDB MUST be stopped before running this tool." +
+                    "\n";
+    public static final String FAILED_TO_OBTAIN_NODE_LOCK_MSG = "failed to lock node's directory, is CrateDB still running?";
     public static final String NO_NODE_FOLDER_FOUND_MSG = "no node folder is found in data folder(s), node has not been started yet?";
     public static final String NO_NODE_METADATA_FOUND_MSG = "no node meta data is found, node has not been started yet?";
-    public static final String CS_MISSING_MSG =
-        "cluster state is empty, cluster has never been bootstrapped?";
-
-
+    public static final String ABORTED_BY_USER_MSG = "aborted by user";
+    public static final String CS_MISSING_MSG = "cluster state is empty, cluster has never been bootstrapped?";
     final OptionSpec<Integer> nodeOrdinalOption;
 
     protected static final NamedXContentRegistry NAMED_X_CONTENT_REGISTRY = new NamedXContentRegistry(
@@ -88,8 +86,7 @@ public abstract class ElasticsearchNodeCommand extends EnvironmentAwareCommand {
         }
 
         String nodeId = nodeMetadata.nodeId();
-        return new PersistedClusterStateService(dataPaths, nodeId,
-                                                NAMED_X_CONTENT_REGISTRY, BigArrays.NON_RECYCLING_INSTANCE, true);
+        return new PersistedClusterStateService(dataPaths, nodeId, NAMED_X_CONTENT_REGISTRY, BigArrays.NON_RECYCLING_INSTANCE, true);
     }
 
     public static ClusterState clusterState(Environment environment, PersistedClusterStateService.OnDiskState onDiskState) {
@@ -116,7 +113,7 @@ public abstract class ElasticsearchNodeCommand extends EnvironmentAwareCommand {
         }
         try (NodeEnvironment.NodeLock lock = new NodeEnvironment.NodeLock(nodeOrdinal, LOGGER, env, Files::exists)) {
             final Path[] dataPaths =
-                Arrays.stream(lock.getNodePaths()).filter(Objects::nonNull).map(p -> p.path).toArray(Path[]::new);
+                    Arrays.stream(lock.getNodePaths()).filter(Objects::nonNull).map(p -> p.path).toArray(Path[]::new);
             if (dataPaths.length == 0) {
                 throw new ElasticsearchException(NO_NODE_FOLDER_FOUND_MSG);
             }
@@ -175,7 +172,6 @@ public abstract class ElasticsearchNodeCommand extends EnvironmentAwareCommand {
         }
     }
 
-    //package-private for testing
     public OptionParser getParser() {
         return parser;
     }

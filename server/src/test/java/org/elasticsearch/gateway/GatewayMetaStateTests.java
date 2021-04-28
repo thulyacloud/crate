@@ -50,7 +50,7 @@ public class GatewayMetaStateTests extends ESTestCase {
             Collections.emptyList()
         );
         Metadata upgrade = GatewayMetaState.upgradeMetadata(metadata, new MockMetadataIndexUpgradeService(false), metadataUpgrader);
-        assertNotSame(upgrade, metadata);
+        assertTrue(upgrade != metadata);
         assertFalse(Metadata.isGlobalStateEquals(upgrade, metadata));
         assertNotNull(upgrade.custom(CustomMetadata1.TYPE));
         assertThat(((TestCustomMetadata) upgrade.custom(CustomMetadata1.TYPE)).getData(), equalTo("modified_data1"));
@@ -152,25 +152,27 @@ public class GatewayMetaStateTests extends ESTestCase {
             default:
                 throw new IllegalStateException("should never happen");
         }
-        MetadataUpgrader metadataUpgrader = new MetadataUpgrader(List.of(), Arrays.asList(
-            indexTemplateMetadatas -> {
-                indexTemplateMetadatas.put("template1", IndexTemplateMetadata.builder("template1")
-                    .patterns(randomIndexPatterns())
-                    .settings(Settings.builder().put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 20).build())
-                    .build());
-                return indexTemplateMetadatas;
+        MetadataUpgrader metadataUpgrader = new MetadataUpgrader(
+            Collections.emptyList(),
+            Arrays.asList(
+                indexTemplateMetadatas -> {
+                    indexTemplateMetadatas.put("template1", IndexTemplateMetadata.builder("template1")
+                        .patterns(randomIndexPatterns())
+                        .settings(Settings.builder().put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), 20).build())
+                        .build());
+                    return indexTemplateMetadatas;
 
-            },
-            indexTemplateMetadatas -> {
-                indexTemplateMetadatas.put("template2", IndexTemplateMetadata.builder("template2")
-                    .patterns(randomIndexPatterns())
-                    .settings(Settings.builder().put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 10).build()).build());
-                return indexTemplateMetadatas;
+                },
+                indexTemplateMetadatas -> {
+                    indexTemplateMetadatas.put("template2", IndexTemplateMetadata.builder("template2")
+                        .patterns(randomIndexPatterns())
+                        .settings(Settings.builder().put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 10).build()).build());
+                    return indexTemplateMetadatas;
 
             }
         ));
         Metadata upgrade = GatewayMetaState.upgradeMetadata(metadata, new MockMetadataIndexUpgradeService(false), metadataUpgrader);
-        assertNotSame(upgrade, metadata);
+        assertTrue(upgrade != metadata);
         assertFalse(Metadata.isGlobalStateEquals(upgrade, metadata));
         assertNotNull(upgrade.templates().get("template1"));
         assertThat(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.get(upgrade.templates().get("template1").settings()), equalTo(20));
@@ -262,8 +264,8 @@ public class GatewayMetaStateTests extends ESTestCase {
         for (String template : templates) {
             IndexTemplateMetadata templateMetadata = IndexTemplateMetadata.builder(template)
                 .settings(settings(Version.CURRENT)
-                              .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), randomIntBetween(0, 3))
-                              .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), randomIntBetween(1, 5)))
+                    .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), randomIntBetween(0, 3))
+                    .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), randomIntBetween(1, 5)))
                 .patterns(randomIndexPatterns())
                 .build();
             builder.put(templateMetadata);

@@ -18,7 +18,6 @@
  */
 package org.elasticsearch.gateway;
 
-import io.crate.common.collections.Tuple;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,7 +46,11 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.test.MockLogAppender;
+import org.elasticsearch.test.junit.annotations.TestLogging;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+
+import io.crate.common.collections.Tuple;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -91,11 +94,11 @@ public class IncrementalClusterStateWriterTests extends ESAllocationTestCase {
 
     private ClusterState clusterStateWithAssignedIndex(IndexMetadata indexMetadata, boolean masterEligible) {
         AllocationService strategy = createAllocationService(Settings.builder()
-                                                                 .put("cluster.routing.allocation.node_concurrent_recoveries", 100)
-                                                                 .put(ClusterRebalanceAllocationDecider.CLUSTER_ROUTING_ALLOCATION_ALLOW_REBALANCE_SETTING.getKey(), "always")
-                                                                 .put("cluster.routing.allocation.cluster_concurrent_rebalance", 100)
-                                                                 .put("cluster.routing.allocation.node_initial_primaries_recoveries", 100)
-                                                                 .build());
+            .put("cluster.routing.allocation.node_concurrent_recoveries", 100)
+            .put(ClusterRebalanceAllocationDecider.CLUSTER_ROUTING_ALLOCATION_ALLOW_REBALANCE_SETTING.getKey(), "always")
+            .put("cluster.routing.allocation.cluster_concurrent_rebalance", 100)
+            .put("cluster.routing.allocation.node_initial_primaries_recoveries", 100)
+            .build());
 
         ClusterState oldClusterState = clusterStateWithUnassignedIndex(indexMetadata, masterEligible);
         RoutingTable routingTable = strategy.reroute(oldClusterState, "reroute").routingTable();
@@ -147,15 +150,16 @@ public class IncrementalClusterStateWriterTests extends ESAllocationTestCase {
         RoutingTable routingTable = RoutingTable.builder()
             .addAsRecovery(metadataNewClusterState.index("test"))
             .build();
+
         oldClusterState = ClusterState.builder(oldClusterState).routingTable(routingTable)
             .metadata(metadataNewClusterState).build();
         if (assigned) {
             AllocationService strategy = createAllocationService(Settings.builder()
-                                                                     .put("cluster.routing.allocation.node_concurrent_recoveries", 100)
-                                                                     .put(ClusterRebalanceAllocationDecider.CLUSTER_ROUTING_ALLOCATION_ALLOW_REBALANCE_SETTING.getKey(), "always")
-                                                                     .put("cluster.routing.allocation.cluster_concurrent_rebalance", 100)
-                                                                     .put("cluster.routing.allocation.node_initial_primaries_recoveries", 100)
-                                                                     .build());
+                .put("cluster.routing.allocation.node_concurrent_recoveries", 100)
+                .put(ClusterRebalanceAllocationDecider.CLUSTER_ROUTING_ALLOCATION_ALLOW_REBALANCE_SETTING.getKey(), "always")
+                .put("cluster.routing.allocation.cluster_concurrent_rebalance", 100)
+                .put("cluster.routing.allocation.node_initial_primaries_recoveries", 100)
+                .build());
 
             routingTable = strategy.reroute(oldClusterState, "reroute").routingTable();
         }
@@ -220,6 +224,7 @@ public class IncrementalClusterStateWriterTests extends ESAllocationTestCase {
         assertThat(indices.size(), equalTo(1));
     }
 
+    @Test
     public void testResolveStatesToBeWritten() throws WriteStateException {
         Map<Index, Long> indices = new HashMap<>();
         Set<Index> relevantIndices = new HashSet<>();
@@ -448,6 +453,7 @@ public class IncrementalClusterStateWriterTests extends ESAllocationTestCase {
         }
     }
 
+    @TestLogging(value = "org.elasticsearch.gateway:WARN")
     public void testSlowLogging() throws WriteStateException, IllegalAccessException {
         final long slowWriteLoggingThresholdMillis;
         final Settings settings;
@@ -472,15 +478,15 @@ public class IncrementalClusterStateWriterTests extends ESAllocationTestCase {
         final ClusterSettings clusterSettings = new ClusterSettings(settings, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS);
         final IncrementalClusterStateWriter incrementalClusterStateWriter
             = new IncrementalClusterStateWriter(settings, clusterSettings, mock(MetaStateService.class),
-                                                new Manifest(randomNonNegativeLong(), randomNonNegativeLong(), randomNonNegativeLong(), Collections.emptyMap()),
-                                                clusterState, () -> currentTime.getAndAdd(writeDurationMillis.get()));
+            new Manifest(randomNonNegativeLong(), randomNonNegativeLong(), randomNonNegativeLong(), Collections.emptyMap()),
+            clusterState, () -> currentTime.getAndAdd(writeDurationMillis.get()));
 
         assertExpectedLogs(clusterState, incrementalClusterStateWriter, new MockLogAppender.SeenEventExpectation(
             "should see warning at threshold",
             IncrementalClusterStateWriter.class.getCanonicalName(),
             Level.WARN,
             "writing cluster state took [*] which is above the warn threshold of [*]; " +
-            "wrote metadata for [0] indices and skipped [0] unchanged indices"));
+                "wrote metadata for [0] indices and skipped [0] unchanged indices"));
 
         writeDurationMillis.set(randomLongBetween(slowWriteLoggingThresholdMillis, slowWriteLoggingThresholdMillis * 2));
         assertExpectedLogs(clusterState, incrementalClusterStateWriter, new MockLogAppender.SeenEventExpectation(
@@ -488,7 +494,7 @@ public class IncrementalClusterStateWriterTests extends ESAllocationTestCase {
             IncrementalClusterStateWriter.class.getCanonicalName(),
             Level.WARN,
             "writing cluster state took [*] which is above the warn threshold of [*]; " +
-            "wrote metadata for [0] indices and skipped [0] unchanged indices"));
+                "wrote metadata for [0] indices and skipped [0] unchanged indices"));
 
         writeDurationMillis.set(randomLongBetween(1, slowWriteLoggingThresholdMillis - 1));
         assertExpectedLogs(clusterState, incrementalClusterStateWriter, new MockLogAppender.UnseenEventExpectation(
@@ -498,14 +504,14 @@ public class IncrementalClusterStateWriterTests extends ESAllocationTestCase {
             "*"));
 
         clusterSettings.applySettings(Settings.builder()
-                                          .put(IncrementalClusterStateWriter.SLOW_WRITE_LOGGING_THRESHOLD.getKey(), writeDurationMillis.get() + "ms")
-                                          .build());
+            .put(IncrementalClusterStateWriter.SLOW_WRITE_LOGGING_THRESHOLD.getKey(), writeDurationMillis.get() + "ms")
+            .build());
         assertExpectedLogs(clusterState, incrementalClusterStateWriter, new MockLogAppender.SeenEventExpectation(
             "should see warning at reduced threshold",
             IncrementalClusterStateWriter.class.getCanonicalName(),
             Level.WARN,
             "writing cluster state took [*] which is above the warn threshold of [*]; " +
-            "wrote metadata for [0] indices and skipped [0] unchanged indices"));
+                "wrote metadata for [0] indices and skipped [0] unchanged indices"));
 
         assertThat(currentTime.get(), lessThan(startTimeMillis + 10 * slowWriteLoggingThresholdMillis)); // ensure no overflow
     }

@@ -41,27 +41,27 @@ import java.util.Locale;
 public class UnsafeBootstrapMasterCommand extends ElasticsearchNodeCommand {
 
     public static final String CLUSTER_STATE_TERM_VERSION_MSG_FORMAT =
-        "Current node cluster state (term, version) pair is (%s, %s)";
+            "Current node cluster state (term, version) pair is (%s, %s)";
     public static final String CONFIRMATION_MSG =
         DELIMITER +
-        "\n" +
-        "You should only run this tool if you have permanently lost half or more\n" +
-        "of the master-eligible nodes in this cluster, and you cannot restore the\n" +
-        "cluster from a snapshot. This tool can cause arbitrary data loss and its\n" +
-        "use should be your last resort. If you have multiple surviving master\n" +
-        "eligible nodes, you should run this tool on the node with the highest\n" +
-        "cluster state (term, version) pair.\n" +
-        "\n" +
-        "Do you want to proceed?\n";
+            "\n" +
+            "You should only run this tool if you have permanently lost half or more\n" +
+            "of the master-eligible nodes in this cluster, and you cannot restore the\n" +
+            "cluster from a snapshot. This tool can cause arbitrary data loss and its\n" +
+            "use should be your last resort. If you have multiple surviving master\n" +
+            "eligible nodes, you should run this tool on the node with the highest\n" +
+            "cluster state (term, version) pair.\n" +
+            "\n" +
+            "Do you want to proceed?\n";
 
-    public static final String NOT_MASTER_NODE_MSG = "unsafe-bootstrap tool can only be run on master eligible node";
+    static final String NOT_MASTER_NODE_MSG = "unsafe-bootstrap tool can only be run on master eligible node";
 
     public static final String EMPTY_LAST_COMMITTED_VOTING_CONFIG_MSG =
         "last committed voting voting configuration is empty, cluster has never been bootstrapped?";
 
     public static final String MASTER_NODE_BOOTSTRAPPED_MSG = "Master node was successfully bootstrapped";
     public static final Setting<String> UNSAFE_BOOTSTRAP =
-        ClusterService.USER_DEFINED_METADATA.getConcreteSetting("cluster.metadata.unsafe-bootstrap");
+            ClusterService.USER_DEFINED_METADATA.getConcreteSetting("cluster.metadata.unsafe-bootstrap");
 
     public UnsafeBootstrapMasterCommand() {
         super("Forces the successful election of the current node after the permanent loss of the half or more master-eligible nodes");
@@ -89,19 +89,17 @@ public class UnsafeBootstrapMasterCommand extends ElasticsearchNodeCommand {
 
         final CoordinationMetadata coordinationMetadata = metadata.coordinationMetadata();
         if (coordinationMetadata == null ||
-            coordinationMetadata.getLastCommittedConfiguration() == null ||
-            coordinationMetadata.getLastCommittedConfiguration().isEmpty()) {
+                coordinationMetadata.getLastCommittedConfiguration() == null ||
+                coordinationMetadata.getLastCommittedConfiguration().isEmpty()) {
             throw new ElasticsearchException(EMPTY_LAST_COMMITTED_VOTING_CONFIG_MSG);
         }
         terminal.println(String.format(Locale.ROOT, CLUSTER_STATE_TERM_VERSION_MSG_FORMAT, coordinationMetadata.term(),
-                                       metadata.version()));
+                metadata.version()));
 
         CoordinationMetadata newCoordinationMetadata = CoordinationMetadata.builder(coordinationMetadata)
             .clearVotingConfigExclusions()
-            .lastAcceptedConfiguration(new CoordinationMetadata.VotingConfiguration(
-                Collections.singleton(persistedClusterStateService.getNodeId())))
-            .lastCommittedConfiguration(new CoordinationMetadata.VotingConfiguration(
-                Collections.singleton(persistedClusterStateService.getNodeId())))
+            .lastAcceptedConfiguration(new CoordinationMetadata.VotingConfiguration(Collections.singleton(persistedClusterStateService.getNodeId())))
+            .lastCommittedConfiguration(new CoordinationMetadata.VotingConfiguration(Collections.singleton(persistedClusterStateService.getNodeId())))
             .build();
 
         Settings persistentSettings = Settings.builder()

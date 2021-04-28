@@ -20,7 +20,6 @@
 package org.elasticsearch.gateway;
 
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
-import io.crate.common.collections.Tuple;
 import io.crate.common.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,6 +40,7 @@ import org.elasticsearch.cluster.metadata.MetadataIndexUpgradeService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import io.crate.common.collections.Tuple;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
@@ -205,14 +205,14 @@ public class GatewayMetaState implements Closeable {
         final Metadata.Builder upgradedMetadata = Metadata.builder(metadata);
         for (IndexMetadata indexMetadata : metadata) {
             IndexMetadata newMetadata = metadataIndexUpgradeService.upgradeIndexMetadata(indexMetadata,
-                Version.CURRENT.minimumIndexCompatibilityVersion());
+                    Version.CURRENT.minimumIndexCompatibilityVersion());
             changed |= indexMetadata != newMetadata;
             upgradedMetadata.put(newMetadata, false);
         }
 
         // upgrade global custom meta data
         if (applyPluginUpgraders(metadata.getCustoms(), metadataUpgrader.customMetadataUpgraders,
-                                 upgradedMetadata::removeCustom, upgradedMetadata::putCustom)) {
+                upgradedMetadata::removeCustom, upgradedMetadata::putCustom)) {
             changed = true;
         }
 

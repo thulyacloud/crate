@@ -74,7 +74,7 @@ public class GatewayMetaStatePersistedStateTests extends ESTestCase {
     public void setUp() throws Exception {
         nodeEnvironment = newNodeEnvironment();
         localNode = new DiscoveryNode("node1", buildNewFakeTransportAddress(), Collections.emptyMap(),
-                                      Sets.newHashSet(DiscoveryNodeRole.MASTER_ROLE), Version.CURRENT);
+                Sets.newHashSet(DiscoveryNodeRole.MASTER_ROLE), Version.CURRENT);
         clusterName = new ClusterName(randomAlphaOfLength(10));
         settings = Settings.builder().put(ClusterName.CLUSTER_NAME_SETTING.getKey(), clusterName.value()).build();
         super.setUp();
@@ -137,21 +137,21 @@ public class GatewayMetaStatePersistedStateTests extends ESTestCase {
 
     private ClusterState createClusterState(long version, Metadata metadata) {
         return ClusterState.builder(clusterName).
-            nodes(DiscoveryNodes.builder().add(localNode).localNodeId(localNode.getId()).build()).
-            version(version).
-            metadata(metadata).
-            build();
+                nodes(DiscoveryNodes.builder().add(localNode).localNodeId(localNode.getId()).build()).
+                version(version).
+                metadata(metadata).
+                build();
     }
 
     private CoordinationMetadata createCoordinationMetadata(long term) {
         CoordinationMetadata.Builder builder = CoordinationMetadata.builder();
         builder.term(term);
         builder.lastAcceptedConfiguration(
-            new CoordinationMetadata.VotingConfiguration(
-                Sets.newHashSet(generateRandomStringArray(10, 10, false))));
+                new CoordinationMetadata.VotingConfiguration(
+                        Sets.newHashSet(generateRandomStringArray(10, 10, false))));
         builder.lastCommittedConfiguration(
-            new CoordinationMetadata.VotingConfiguration(
-                Sets.newHashSet(generateRandomStringArray(10, 10, false))));
+                new CoordinationMetadata.VotingConfiguration(
+                        Sets.newHashSet(generateRandomStringArray(10, 10, false))));
         for (int i = 0; i < randomIntBetween(0, 5); i++) {
             builder.addVotingConfigExclusion(new VotingConfigExclusion(randomAlphaOfLength(10), randomAlphaOfLength(10)));
         }
@@ -161,12 +161,12 @@ public class GatewayMetaStatePersistedStateTests extends ESTestCase {
 
     private IndexMetadata createIndexMetadata(String indexName, int numberOfShards, long version) {
         return IndexMetadata.builder(indexName).settings(
-            Settings.builder()
-                .put(IndexMetadata.SETTING_INDEX_UUID, indexName)
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numberOfShards)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                .build()
+                Settings.builder()
+                        .put(IndexMetadata.SETTING_INDEX_UUID, indexName)
+                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numberOfShards)
+                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+                        .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+                        .build()
         ).version(version).build();
     }
 
