@@ -248,7 +248,7 @@ public class PersistedClusterStateService {
                     final String thisNodeId = userData.get(NODE_ID_KEY);
                     assert thisNodeId != null;
                     if (nodeId != null && nodeId.equals(thisNodeId) == false) {
-                        //TODO Skip this metadata as it belong not to this node
+                        //Do nothing, because the metadata does not belong to this node
                     } else if (nodeId == null) {
                         nodeId = thisNodeId;
                     }
@@ -261,31 +261,6 @@ public class PersistedClusterStateService {
             return null;
         }
         return new NodeMetadata(nodeId);
-    }
-
-    /**
-     * Overrides the version field for the metadata in the given data path
-     */
-    public static void overrideVersion(Version newVersion, Path... dataPaths) throws IOException {
-        for (final Path dataPath : dataPaths) {
-            final Path indexPath = dataPath.resolve(METADATA_DIRECTORY_NAME);
-            if (Files.exists(indexPath)) {
-                try (DirectoryReader reader = DirectoryReader.open(new SimpleFSDirectory(dataPath.resolve(METADATA_DIRECTORY_NAME)))) {
-                    final Map<String, String> userData = reader.getIndexCommit().getUserData();
-                    assert userData.get(NODE_VERSION_KEY) != null;
-
-                    try (IndexWriter indexWriter =
-                             createIndexWriter(new SimpleFSDirectory(dataPath.resolve(METADATA_DIRECTORY_NAME)), true)) {
-                        final Map<String, String> commitData = new HashMap<>(userData);
-                        commitData.put(NODE_VERSION_KEY, Integer.toString(newVersion.internalId));
-                        indexWriter.setLiveCommitData(commitData.entrySet());
-                        indexWriter.commit();
-                    }
-                } catch (IndexNotFoundException e) {
-                    LOGGER.debug(new ParameterizedMessage("no on-disk state at {}", indexPath), e);
-                }
-            }
-        }
     }
 
     /**
