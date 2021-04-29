@@ -54,7 +54,7 @@ public class UnsafeBootstrapMasterCommand extends ElasticsearchNodeCommand {
             "\n" +
             "Do you want to proceed?\n";
 
-    static final String NOT_MASTER_NODE_MSG = "unsafe-bootstrap tool can only be run on master eligible node";
+    public static final String NOT_MASTER_NODE_MSG = "unsafe-bootstrap tool can only be run on master eligible node";
 
     public static final String EMPTY_LAST_COMMITTED_VOTING_CONFIG_MSG =
         "last committed voting voting configuration is empty, cluster has never been bootstrapped?";
