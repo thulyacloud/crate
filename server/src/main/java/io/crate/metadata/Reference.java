@@ -60,12 +60,8 @@ public class Reference extends Symbol {
 
     public Reference(StreamInput in) throws IOException {
         ident = new ReferenceIdent(in);
-        if (in.getVersion().before(Version.V_4_6_0)) {
-            Integer pos = in.readOptionalVInt();
-            position = pos == null ? 0 : pos;
-        } else {
-            position = in.readVInt();
-        }
+        Integer pos = in.readOptionalVInt();
+        position = pos == null ? 0 : pos;
         type = DataTypes.fromStream(in);
         granularity = RowGranularity.fromStream(in);
 
@@ -262,11 +258,8 @@ public class Reference extends Symbol {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         ident.writeTo(out);
-        if (out.getVersion().onOrAfter(Version.V_4_6_0)) {
-            out.writeVInt(position);
-        } else {
-            out.writeOptionalInt(position == 0 ? null : position);
-        }
+        out.writeOptionalInt(position == 0 ? null : position);
+
         DataTypes.toStream(type, out);
         RowGranularity.toStream(granularity, out);
 
